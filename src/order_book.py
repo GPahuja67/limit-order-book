@@ -1,16 +1,38 @@
-from collections import defaultdict, deque
+def match(self, order):
 
-class OrderBook:
+    while order.qty > 0:
 
-    def __init__(self):
+        if order.side == "BUY":
+            best_price = self.best_ask()
 
-        self.bids = defaultdict(deque)
-        self.asks = defaultdict(deque)
+            if best_price is None:
+                break
 
-        self.order_map = {}
+            if order.price != 0 and best_price > order.price:
+                break
 
-    def best_bid(self):
-        return max(self.bids.keys()) if self.bids else None
+            queue = self.asks[best_price]
 
-    def best_ask(self):
-        return min(self.asks.keys()) if self.asks else None
+        else:
+            best_price = self.best_bid()
+
+            if best_price is None:
+                break
+
+            if order.price != 0 and best_price < order.price:
+                break
+
+            queue = self.bids[best_price]
+
+        top = queue[0]
+
+        trade_qty = min(order.qty, top.qty)
+
+        print(f"TRADE {order.id} {top.id} {best_price} {trade_qty}")
+
+        order.qty -= trade_qty
+        top.qty -= trade_qty
+
+        if top.qty == 0:
+            queue.popleft()
+            del self.order_map[top.id]
