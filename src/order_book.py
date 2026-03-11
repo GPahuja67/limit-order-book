@@ -5,23 +5,31 @@ class OrderBook:
 
     def __init__(self):
 
-        # price -> queue of orders
-        self.bids = defaultdict(deque)   # BUY side
-        self.asks = defaultdict(deque)   # SELL side
+        self.bids = defaultdict(deque)
+        self.asks = defaultdict(deque)
 
-        # order_id -> order
         self.order_map = {}
 
-    # best buy price
     def best_bid(self):
         return max(self.bids.keys()) if self.bids else None
 
-    # best sell price
     def best_ask(self):
         return min(self.asks.keys()) if self.asks else None
 
 
-    # ---------------- MATCHING ENGINE ----------------
+    # ---------------- BBO ----------------
+    def print_bbo(self):
+
+        bid = self.best_bid()
+        ask = self.best_ask()
+
+        bid_str = bid if bid is not None else "None"
+        ask_str = ask if ask is not None else "None"
+
+        print(f"BBO: BID {bid_str} | ASK {ask_str}")
+
+
+    # ---------------- MATCHING ----------------
     def match(self, order):
 
         while order.qty > 0:
@@ -33,7 +41,6 @@ class OrderBook:
                 if best_price is None:
                     break
 
-                # price check for LIMIT order
                 if order.price != 0 and best_price > order.price:
                     break
 
@@ -61,18 +68,20 @@ class OrderBook:
 
             trade_qty = min(order.qty, top.qty)
 
-            print(f"TRADE {buy_id} {sell_id} {best_price} {trade_qty}")
+            trade_price = top.price
+
+            print(f"TRADE {buy_id} {sell_id} {trade_price} {trade_qty}")
 
             order.qty -= trade_qty
             top.qty -= trade_qty
 
-            # remove filled order
             if top.qty == 0:
+
                 queue.popleft()
                 del self.order_map[top.id]
 
-            # remove empty price level
             if not queue:
+
                 if order.side == "BUY":
                     del self.asks[best_price]
                 else:
@@ -82,10 +91,8 @@ class OrderBook:
     # ---------------- ADD ORDER ----------------
     def add_order(self, order):
 
-        # attempt match first
         self.match(order)
 
-        # if fully executed
         if order.qty == 0:
             return
 
@@ -94,6 +101,8 @@ class OrderBook:
         book[order.price].append(order)
 
         self.order_map[order.id] = order
+
+        self.print_bbo()
 
 
     # ---------------- CANCEL ORDER ----------------
@@ -109,6 +118,7 @@ class OrderBook:
         queue = book[order.price]
 
         for o in list(queue):
+
             if o.id == order_id:
                 queue.remove(o)
                 break
@@ -118,22 +128,26 @@ class OrderBook:
 
         del self.order_map[order_id]
 
+        self.print_bbo()
 
-    # ---------------- PRINT FINAL BOOK ----------------
+
+    # ---------------- FINAL BOOK ----------------
     def print_book(self):
 
         print("\n--- Book ---")
 
-        # asks (lowest first)
         ask_prices = sorted(self.asks.keys())[:5]
 
         for p in ask_prices:
+
             qty = sum(o.qty for o in self.asks[p])
+
             print(f"ASK: {p} x {qty}")
 
-        # bids (highest first)
         bid_prices = sorted(self.bids.keys(), reverse=True)[:5]
 
         for p in bid_prices:
+
             qty = sum(o.qty for o in self.bids[p])
+
             print(f"BID: {p} x {qty}")
