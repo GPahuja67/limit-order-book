@@ -1,12 +1,15 @@
 from src.order_book import OrderBook
 from src.parser import parse_line
+import time
 
 
 def run_engine(file_path):
 
+    start = time.time()
+
     book = OrderBook()
 
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
 
         for line in f:
 
@@ -23,5 +26,10 @@ def run_engine(file_path):
             elif cmd == "CANCEL":
                 book.cancel(data)
 
-    # after processing all orders
     book.print_book()
+
+    end = time.time()
+
+    duration = end - start
+
+    print(f"\nProcessed in {duration:.6f} seconds")
