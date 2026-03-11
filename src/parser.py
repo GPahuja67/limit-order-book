@@ -1,6 +1,7 @@
 from src.order import Order
 import time
 
+
 def parse_line(line):
 
     parts = line.strip().split()
